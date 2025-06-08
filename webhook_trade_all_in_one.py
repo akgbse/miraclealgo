@@ -7,25 +7,20 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Secret token for security
+# Secret for validating webhook
 SECRET_TOKEN = os.getenv("SECRET_TOKEN", "my_secret_token_123")
 
-# Twilio credentials
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER")
-TO_NUMBER = os.getenv("TO_NUMBER")
-
+# Twilio function
 def send_sms(message):
-    try:
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-        client.messages.create(
-            body=message,
-            from_=TWILIO_FROM_NUMBER,
-            to=TO_NUMBER
-        )
-    except Exception as e:
-        print("SMS Error:", e)
+    client = Client(
+        os.getenv("TWILIO_ACCOUNT_SID"),
+        os.getenv("TWILIO_AUTH_TOKEN")
+    )
+    client.messages.create(
+        body=message,
+        from_=os.getenv("TWILIO_FROM_NUMBER"),
+        to=os.getenv("TO_NUMBER")
+    )
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -34,27 +29,30 @@ def webhook():
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        data = request.get_json()
+        data = request.json
         symbol = data.get("symbol")
-        expiry = data.get("expiry_date")
         strike = data.get("strike_price")
         opt_type = data.get("option_type")
+        expiry = data.get("expiry_date")
 
-        # Compose SMS message
-        sms_text = f"🔔 Signal:\nSymbol: {symbol}\nExpiry: {expiry}\nStrike: {strike}\nType: {opt_type}"
-        send_sms(sms_text)
+        message = (
+            f"📈 Trade Signal\n"
+            f"Symbol: {symbol}\n"
+            f"Strike: {strike} {opt_type}\n"
+            f"Expiry: {expiry}"
+        )
 
-        return jsonify({
-            "status": "Webhook received",
-            "data": data
-        }), 200
+        send_sms(message)
+
+        return jsonify({"status": "Webhook received", "data": data}), 200
 
     except Exception as e:
-        print("Webhook error:", e)
-        return jsonify({"error": "Server error"}), 500
+        return jsonify({"error": str(e)}), 500
 
+# Required for Render gunicorn deployment
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
     except Exception as e:
