@@ -24,7 +24,7 @@ def home():
 def webhook():
     token = request.headers.get("Authorization")
     if token != f"Bearer {SECRET_TOKEN}":
-        return jsonify({"error": "Unauthorized"}), 403
+        return jsonify({"error": "Unauthorized"}), 401
 
     try:
         data = request.json
