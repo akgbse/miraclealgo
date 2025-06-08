@@ -11,11 +11,8 @@ SECRET_TOKEN = os.getenv("SECRET_TOKEN")
 @app.route("/webhook", methods=["POST"])
 def webhook():
     header_token = request.headers.get("X-Secret-Token")
-    print("DEBUG >> Header Token Received:", header_token)
-    print("DEBUG >> SECRET_TOKEN from ENV:", SECRET_TOKEN)
-
-    if header_token != SECRET_TOKEN:
-        return jsonify({"error": "Unauthorized"}), 401
+if header_token != SECRET_TOKEN:
+    return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json()
     if not data:
