@@ -7,10 +7,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# Secret for validating webhook
 SECRET_TOKEN = os.getenv("SECRET_TOKEN", "my_secret_token_123")
 
-# Twilio function
 def send_sms(message):
     client = Client(
         os.getenv("TWILIO_ACCOUNT_SID"),
@@ -36,27 +34,21 @@ def webhook():
         expiry = data.get("expiry_date")
 
         message = (
-            f"📈 Trade Signal\n"
+            f"📈 Trade Alert\n"
             f"Symbol: {symbol}\n"
             f"Strike: {strike} {opt_type}\n"
             f"Expiry: {expiry}"
         )
 
         send_sms(message)
-
         return jsonify({"status": "Webhook received", "data": data}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Required for Render gunicorn deployment
+# Needed for gunicorn
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
 
-
-
-    except Exception as e:
-        print("Webhook processing error:", str(e))
-        return jsonify({"error": str(e)}), 500
 
 
