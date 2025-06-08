@@ -1,48 +1,47 @@
-from flask import Flask, request, jsonify
-from telegram_alerts import send_telegram_alert
 import os
+from flask import Flask, request, jsonify
+import requests
+from dhan_order import place_dhan_order
+from telegram_alerts import send_telegram_alert
+from whatsapp_alerts import send_whatsapp_alert  # optional
+from trade_logger import log_trade
 
 app = Flask(__name__)
-
-# Load secret token from environment
 SECRET_TOKEN = os.getenv("SECRET_TOKEN")
-
-@app.route("/")
-def home():
-    return "Webhook Server Running!"
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    if request.method == "POST":
-        # Check secret token
-        token = request.headers.get("X-Secret-Token")
-        if token != SECRET_TOKEN:
-            return jsonify({"error": "Unauthorized"}), 401
+    header_token = request.headers.get("X-Secret-Token")
+    print("DEBUG >> Header Token Received:", header_token)
+    print("DEBUG >> SECRET_TOKEN from ENV:", SECRET_TOKEN)
 
-        data = request.get_json()
+    if header_token != SECRET_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
 
-        # Extract fields
-        symbol = data.get("symbol")
-        strike_price = data.get("strike_price")
-        expiry_date = data.get("expiry_date")
-        option_type = data.get("option_type")
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid JSON"}), 400
 
-        # Compose and send Telegram alert
-        alert_msg = (
-            f"🚀 *Trade Alert Received!*\n\n"
-            f"*Symbol:* `{symbol}`\n"
-            f"*Strike:* `{strike_price}`\n"
-            f"*Type:* `{option_type}`\n"
-            f"*Expiry:* `{expiry_date}`"
-        )
-        send_telegram_alert(alert_msg)
+    symbol = data.get("symbol", "")
+    expiry = data.get("expiry_date", "")
+    strike = data.get("strike_price", "")
+    option_type = data.get("option_type", "")
 
-        # (Future) Place Dhan order or send SMS etc.
+    message = f"✅ SIGNAL: {symbol} {option_type} {strike} | Expiry: {expiry}"
 
-        return jsonify({"status": "Webhook received"}), 200
+    # Send alerts
+    send_telegram_alert(message)
+    send_whatsapp_alert(message)  # optional
+    log_trade(symbol, expiry, strike, option_type)
+
+    # Place order
+    place_dhan_order(symbol, expiry, strike, option_type)
+
+    return jsonify({"status": "Webhook received"}), 200
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
+
 
 
 
