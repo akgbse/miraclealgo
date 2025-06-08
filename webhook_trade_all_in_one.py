@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 import requests
 from dhan_order import place_dhan_order
 from telegram_alerts import send_telegram_alert
-from whatsapp_alerts import send_whatsapp_alert  # optional
 from trade_logger import log_trade
 
 app = Flask(__name__)
