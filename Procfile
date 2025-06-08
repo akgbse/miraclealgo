@@ -1,1 +1,1 @@
-web: python webhook_trade_all_in_one.py
+web: gunicorn webhook_trade_all_in_one:app
