@@ -22,13 +22,20 @@ def home():
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
+    # Check secret token
     token = request.headers.get("X-Secret-Token")
 
-print("DEBUG >> Header Token Received:", token)
-print("DEBUG >> SECRET_TOKEN from .env:", SECRET_TOKEN)
+    print("DEBUG >> Header Token Received:", token)
+    print("DEBUG >> SECRET_TOKEN from .env:", SECRET_TOKEN)
 
-if token != SECRET_TOKEN:
-    return jsonify({"error": "Unauthorized"}), 401
+    if token != SECRET_TOKEN:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    print("DEBUG >> JSON Payload:", data)
+
+    return jsonify({"status": "Webhook received", "data": data}), 200
+
 
 
     try:
